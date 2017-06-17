@@ -10,6 +10,7 @@ using System.Web;
 namespace ConferenceBot.Controllers
 {
     [LuisModel("95e2a6b1-b2ca-4014-9ce8-b90b64a6487e", "2fc4f3b9a64841eba1bce764b6b568cd")]
+    [Serializable]
     public class ConferenceDialog : LuisDialog<object>
     {
         [LuisIntent("")]

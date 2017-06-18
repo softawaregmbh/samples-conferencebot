@@ -8,7 +8,8 @@ using System.Web.Http.Description;
 using Microsoft.Bot.Connector;
 using Newtonsoft.Json;
 using Microsoft.Bot.Builder.Dialogs;
-using ConferenceBot.Controllers;
+using ConferenceBot.Dialogs;
+using Microsoft.Bot.Builder.FormFlow;
 
 namespace ConferenceBot
 {
@@ -23,7 +24,12 @@ namespace ConferenceBot
         {
             if (activity.Type == ActivityTypes.Message)
             {
-                await Conversation.SendAsync(activity, () => new ConferenceDialog());
+                // Simple Bot
+                await Conversation.SendAsync(activity,
+                    () => Chain.From(() => FormDialog.FromForm(SimpleConferenceDialog.BuildForm)));
+
+                // LUIS Bot
+                //await Conversation.SendAsync(activity, () => new ConferenceDialog());
             }
             else
             {

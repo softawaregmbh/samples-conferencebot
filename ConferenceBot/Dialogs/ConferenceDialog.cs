@@ -7,7 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Web;
 
-namespace ConferenceBot.Controllers
+namespace ConferenceBot.Dialogs
 {
     [LuisModel("95e2a6b1-b2ca-4014-9ce8-b90b64a6487e", "2fc4f3b9a64841eba1bce764b6b568cd")]
     [Serializable]
@@ -28,7 +28,7 @@ namespace ConferenceBot.Controllers
             var room = result.Entities.FirstOrDefault(p => p.Type == "Raum");
             var time = result.Entities.FirstOrDefault(p => p.Type == "Uhrzeit");
 
-            await context.PostAsync($"Ich sehe nach, was im {room.Entity} um {time.Entity} läuft...");
+            await context.PostAsync($"Ich sehe nach, was im **{room.Entity}** um **{time.Entity}** läuft...");
 
             await Task.Delay(1000);
 

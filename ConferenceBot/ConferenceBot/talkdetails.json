@@ -1,0 +1,67 @@
+{
+  "type": "AdaptiveCard",
+  "body": [
+      {
+          "type": "TextBlock",
+          "weight": "Bolder",
+          "text": "Entwicklung von Chat-Bots mit dem Microsoft Bot Framework"
+      },
+      {
+          "type": "ColumnSet",
+          "columns": [
+              {
+                  "type": "Column",
+                  "items": [
+                      {
+                          "type": "Image",
+                          "style": "Person",
+                          "url": "https://www.techconference.at/wp-content/uploads/2018/12/roman-schacherl-2016-1.jpg",
+                          "size": "Medium"
+                      }
+                  ],
+                  "width": "auto"
+              },
+              {
+                  "type": "Column",
+                  "items": [
+                      {
+                          "type": "TextBlock",
+                          "size": "Small",
+                          "text": "Chatten statt klicken: Roman Schacherl zeigt in einer Live-Demo, wie ein „Conversational User Interface“ mit dem Microsoft Bot Framework entwickelt und in Tools wie Skype oder Slack integriert werden kann. Mit Hilfe der Azure Cognitive Services wird Machine Learning genutzt, um die Fragen des Benutzers zu verstehen und entsprechende Antworten liefern zu können.",
+                          "wrap": true
+                      }
+                  ],
+                  "width": "stretch"
+              }
+          ]
+      }
+  ],
+  "actions": [
+      {
+          "type": "Action.ShowCard",
+          "title": "mehr Infos...",
+          "card": {
+              "type": "AdaptiveCard",
+              "style": "emphasis",
+              "body": [
+                  {
+                      "type": "FactSet",
+                      "facts": [
+                          {
+                              "title": "Raum",
+                              "value": "MGC K7"
+                          },
+                          {
+                              "title": "Uhrzeit",
+                              "value": "12:00"
+                          }
+                      ]
+                  }
+              ],
+              "$schema": "http://adaptivecards.io/schemas/adaptive-card.json"
+          }
+      }
+  ],
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "version": "1.0"
+}

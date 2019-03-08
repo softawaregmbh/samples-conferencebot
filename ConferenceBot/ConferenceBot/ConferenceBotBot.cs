@@ -3,13 +3,16 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Builder.Dialogs.Choices;
 using Microsoft.Bot.Schema;
+using Newtonsoft.Json;
 
 namespace ConferenceBot
 {
@@ -91,6 +94,17 @@ namespace ConferenceBot
             await stepContext.Context.SendActivityAsync($"Wir sehen nach, was um {scheduleQuery.Time} im {scheduleQuery.Track}-Track läuft...");
 
             await stepContext.Context.SendActivityAsync(Activity.CreateTypingActivity());
+
+            await Task.Delay(2000);
+
+            // send card
+            var json = await File.ReadAllTextAsync(@"talkdetails.json");
+            var card = JsonConvert.DeserializeObject(json);
+
+            var activity = MessageFactory.Attachment(
+                new Attachment("application/vnd.microsoft.card.adaptive", content: card));
+
+            await stepContext.Context.SendActivityAsync(activity);
 
             return await stepContext.EndDialogAsync(scheduleQuery);
         }

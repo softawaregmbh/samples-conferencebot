@@ -10,41 +10,47 @@ namespace ConferenceBot
 {
     public class ConferenceBotBot : IBot
     {
-        private ScheduleQuery scheduleQuery;
+        private readonly ConversationState conversationState;
+        private IStatePropertyAccessor<ScheduleQuery> scheduleQueryAccessor;
 
-        public ConferenceBotBot()
+        public ConferenceBotBot(ConversationState conversationState)
         {
-            this.scheduleQuery = new ScheduleQuery();
+            this.scheduleQueryAccessor = conversationState.CreateProperty<ScheduleQuery>(nameof(ScheduleQuery));
+            this.conversationState = conversationState ?? throw new System.ArgumentNullException(nameof(conversationState));
         }
         
         public async Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (turnContext.Activity.Type == ActivityTypes.Message)
             {
+                var scheduleQuery = await scheduleQueryAccessor.GetAsync(turnContext, () => new ScheduleQuery());
+
                 var message = turnContext.Activity.Text;
 
-                switch (this.scheduleQuery.LastQuestion)
+                switch (scheduleQuery.LastQuestion)
                 {
                     case QuestionType.Time:
-                        this.scheduleQuery.Time = message;
+                        scheduleQuery.Time = message;
                         break;
                     case QuestionType.Track:
-                        this.scheduleQuery.Track = message;
+                        scheduleQuery.Track = message;
                         break;
                     default:
                         break;
                 }
 
-                if (this.scheduleQuery.Time == null)
+                if (scheduleQuery.Time == null)
                 {
-                    this.scheduleQuery.LastQuestion = QuestionType.Time;
+                    scheduleQuery.LastQuestion = QuestionType.Time;
                     await turnContext.SendActivityAsync("Um welche Uhrzeit?");
                 }
-                else if (this.scheduleQuery.Track == null)
+                else if (scheduleQuery.Track == null)
                 {
-                    this.scheduleQuery.LastQuestion = QuestionType.Track;
+                    scheduleQuery.LastQuestion = QuestionType.Track;
                     await turnContext.SendActivityAsync("In welchem Track?");
                 }
+
+                await conversationState.SaveChangesAsync(turnContext);
             }
         }
     }

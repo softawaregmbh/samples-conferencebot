@@ -6,6 +6,7 @@ using System.Linq;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Bot.Builder;
+using Microsoft.Bot.Builder.Azure;
 using Microsoft.Bot.Builder.Integration.AspNet.Core;
 using Microsoft.Bot.Configuration;
 using Microsoft.Bot.Connector.Authentication;
@@ -71,7 +72,14 @@ namespace ConferenceBot
                 };
             });
 
-            IStorage dataStore = new MemoryStorage();
+            //IStorage dataStore = new MemoryStorage();
+            IStorage dataStore = new CosmosDbStorage(new CosmosDbStorageOptions()
+            {
+                DatabaseId = "bot",
+                CollectionId = "conversationstate",
+                AuthKey = "IazeHmfQPNDW1giK4siIQaherFz09FnV9eM02mLzg65YCFD8QXhvE8Ya0baFag8LAT6lsg8mnaCeuinAFS0YjQ==",
+                CosmosDBEndpoint = new Uri("https://bot4demostorage.documents.azure.com:443/")
+            });
 
             var conversationState = new ConversationState(dataStore);
             services.AddSingleton(conversationState);

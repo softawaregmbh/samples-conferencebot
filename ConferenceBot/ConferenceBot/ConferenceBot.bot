@@ -16,6 +16,16 @@
       "appId": "<YOUR APP ID>",
       "appPassword": "<YOUR APP PASSWORD>",
       "id": "2"
+    },
+    {
+      "type": "luis",
+      "name": "LuisBot",
+      "appId": "045eff6a-5ecc-4935-9cd6-fdf39b4d109c",
+      "version": "0.1",
+      "authoringKey": "53642da501a640e5bb41bc27d2079fa1",
+      "subscriptionKey": "53642da501a640e5bb41bc27d2079fa1",
+      "region": "westus",
+      "id": "158"
     }
   ],
   "padlock": "",

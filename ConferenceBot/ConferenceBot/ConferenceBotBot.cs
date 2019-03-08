@@ -8,26 +8,30 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Azure.CognitiveServices.Language.LUIS.Runtime.Models;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Builder.Dialogs.Choices;
 using Microsoft.Bot.Schema;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace ConferenceBot
 {
     public class ConferenceBotBot : IBot
     {
         private readonly ConversationState conversationState;
+        private readonly IRecognizer recognizer;
         private IStatePropertyAccessor<ScheduleQuery> scheduleQueryAccessor;
         private IStatePropertyAccessor<DialogState> dialogStateAccessor;
         private DialogSet dialogs;
 
-        public ConferenceBotBot(ConversationState conversationState)
+        public ConferenceBotBot(ConversationState conversationState, IRecognizer recognizer)
         {
             this.dialogStateAccessor = conversationState.CreateProperty<DialogState>(nameof(DialogState));
             this.scheduleQueryAccessor = conversationState.CreateProperty<ScheduleQuery>(nameof(ScheduleQuery));
             this.conversationState = conversationState ?? throw new System.ArgumentNullException(nameof(conversationState));
+            this.recognizer = recognizer ?? throw new ArgumentNullException(nameof(recognizer));
 
             this.dialogs = new DialogSet(this.dialogStateAccessor);
 
@@ -47,15 +51,58 @@ namespace ConferenceBot
         {
             if (turnContext.Activity.Type == ActivityTypes.Message)
             {
-                var dialogContext = await dialogs.CreateContextAsync(turnContext);
-                var result = await dialogContext.ContinueDialogAsync();
+                // LUIS
+                var luisResult = await recognizer.RecognizeAsync(turnContext, cancellationToken);
+                var topIntent = luisResult.GetTopScoringIntent();
 
-                if (result.Status == DialogTurnStatus.Empty)
+                bool isLuis = false;
+
+                // Check sentiment
+                var sentimentScore = (float)((JObject)luisResult.Properties["sentiment"])["score"];
+                if (sentimentScore < 0.3)
                 {
-                    await dialogContext.BeginDialogAsync("scheduleDialog");
+                    await turnContext.SendActivityAsync("Ups.. da ist wohl jemand schlecht gelaunt. Ein Support-Mitarbeiter meldet sich in Kürze.");
+                    return;
                 }
 
-                await conversationState.SaveChangesAsync(turnContext);
+                if (topIntent.intent == "ScheduleQuery" && topIntent.score > 0.8)
+                {
+                    try
+                    {
+                        var time = luisResult.Entities["datetime"].First["timex"].First.Value<string>();
+                        var track = luisResult.Entities["track"].First.Value<string>();
+
+                        if (!string.IsNullOrEmpty(time) && !string.IsNullOrEmpty(track))
+                        { 
+                            await ShowResultingCard(turnContext, new ScheduleQuery()
+                            {
+                                Time = time,
+                                Track = track
+                            });
+
+                            isLuis = true;
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        // LUIS failed
+                    }
+                }
+                
+                if (!isLuis)
+                {
+                    // Waterfall
+                    var dialogContext = await dialogs.CreateContextAsync(turnContext);
+                    var result = await dialogContext.ContinueDialogAsync();
+
+                    if (result.Status == DialogTurnStatus.Empty)
+                    {
+                        await dialogContext.BeginDialogAsync("scheduleDialog");
+                    }
+
+                    await conversationState.SaveChangesAsync(turnContext);
+                }
+
             }
         }
         private async Task<DialogTurnResult> TimeStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
@@ -93,7 +140,14 @@ namespace ConferenceBot
 
             await stepContext.Context.SendActivityAsync($"Wir sehen nach, was um {scheduleQuery.Time} im {scheduleQuery.Track}-Track läuft...");
 
-            await stepContext.Context.SendActivityAsync(Activity.CreateTypingActivity());
+            await ShowResultingCard(stepContext.Context, scheduleQuery);
+
+            return await stepContext.EndDialogAsync(scheduleQuery);
+        }
+
+        private static async Task ShowResultingCard(ITurnContext context, ScheduleQuery scheduleQuery)
+        {
+            await context.SendActivityAsync(Activity.CreateTypingActivity());
 
             await Task.Delay(2000);
 
@@ -104,9 +158,7 @@ namespace ConferenceBot
             var activity = MessageFactory.Attachment(
                 new Attachment("application/vnd.microsoft.card.adaptive", content: card));
 
-            await stepContext.Context.SendActivityAsync(activity);
-
-            return await stepContext.EndDialogAsync(scheduleQuery);
+            await context.SendActivityAsync(activity);
         }
     }
 }

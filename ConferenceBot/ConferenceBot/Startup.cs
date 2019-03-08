@@ -6,6 +6,7 @@ using System.Linq;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Bot.Builder;
+using Microsoft.Bot.Builder.AI.Luis;
 using Microsoft.Bot.Builder.Azure;
 using Microsoft.Bot.Builder.Integration.AspNet.Core;
 using Microsoft.Bot.Configuration;
@@ -48,21 +49,21 @@ namespace ConferenceBot
         /// <seealso cref="https://docs.microsoft.com/en-us/azure/bot-service/bot-service-manage-channels?view=azure-bot-service-4.0"/>
         public void ConfigureServices(IServiceCollection services)
         {
+            var secretKey = Configuration.GetSection("botFileSecret")?.Value;
+
+            // Loads .bot configuration file and adds a singleton that your Bot can access through dependency injection.
+            var botConfig = BotConfiguration.Load(@".\ConferenceBot.bot", secretKey);
+            services.AddSingleton(sp => botConfig);
+
+            // Retrieve current endpoint.
+            var service = botConfig.Services.Where(s => s.Type == "endpoint" && s.Name == "development").FirstOrDefault();
+            if (!(service is EndpointService endpointService))
+            {
+                throw new InvalidOperationException($"The .bot file does not contain a development endpoint.");
+            }
+
             services.AddBot<ConferenceBotBot>(options =>
             {
-                var secretKey = Configuration.GetSection("botFileSecret")?.Value;
-
-                // Loads .bot configuration file and adds a singleton that your Bot can access through dependency injection.
-                var botConfig = BotConfiguration.Load(@".\ConferenceBot.bot", secretKey);
-                services.AddSingleton(sp => botConfig);
-
-                // Retrieve current endpoint.
-                var service = botConfig.Services.Where(s => s.Type == "endpoint" && s.Name == "development").FirstOrDefault();
-                if (!(service is EndpointService endpointService))
-                {
-                    throw new InvalidOperationException($"The .bot file does not contain a development endpoint.");
-                }
-
                 options.CredentialProvider = new SimpleCredentialProvider(endpointService.AppId, endpointService.AppPassword);
 
                 // Catches any errors that occur during a conversation turn and logs them.
@@ -71,6 +72,17 @@ namespace ConferenceBot
                     await context.SendActivityAsync("Sorry, it looks like something went wrong.");
                 };
             });
+                       
+            // LUIS
+            var luis = botConfig.Services.Where(s => s.Type == "luis").FirstOrDefault() as LuisService;
+            if (luis == null)
+            {
+                throw new InvalidOperationException("The LUIS service is not configured correctly in your '.bot' file.");
+            }
+
+            var app = new LuisApplication(luis.AppId, luis.AuthoringKey, luis.GetEndpoint());
+            var recognizer = new LuisRecognizer(app);
+            services.AddSingleton<IRecognizer>(recognizer);
 
             //IStorage dataStore = new MemoryStorage();
             IStorage dataStore = new CosmosDbStorage(new CosmosDbStorageOptions()

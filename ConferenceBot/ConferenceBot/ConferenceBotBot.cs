@@ -39,13 +39,14 @@ namespace ConferenceBot
         /// <seealso cref="ConversationState"/>
         public async Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default(CancellationToken))
         {
-            // Handle Message activity type, which is the main activity type for shown within a conversational interface
-            // Message activities may contain text, speech, interactive cards, and binary or unknown attachments.
-            // see https://aka.ms/about-bot-activity-message to learn more about the message and other activity types
             if (turnContext.Activity.Type == ActivityTypes.Message)
             {
+                await turnContext.SendActivityAsync(Activity.CreateTypingActivity());
+
+                await Task.Delay(2000);
+
                 // Echo back to the user whatever they typed.             
-                await turnContext.SendActivityAsync("Hello World", cancellationToken: cancellationToken);
+                await turnContext.SendActivityAsync("That is VERY interesting. Awesome. Mhm.", cancellationToken: cancellationToken);
             }
         }
     }

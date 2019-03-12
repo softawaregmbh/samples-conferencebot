@@ -26,6 +26,14 @@
       "subscriptionKey": "53642da501a640e5bb41bc27d2079fa1",
       "region": "westus",
       "id": "158"
+    },
+    {
+      "type": "cosmosdb",
+      "name": "storagelayer",
+      "endpoint": "https://bot4demostorage.documents.azure.com:443/",
+      "key": "IazeHmfQPNDW1giK4siIQaherFz09FnV9eM02mLzg65YCFD8QXhvE8Ya0baFag8LAT6lsg8mnaCeuinAFS0YjQ==",
+      "database": "bot",
+      "collection": "conversationstate"
     }
   ],
   "padlock": "",

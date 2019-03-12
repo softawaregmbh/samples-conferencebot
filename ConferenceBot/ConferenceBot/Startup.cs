@@ -68,20 +68,25 @@ namespace ConferenceBot
                 .UseBotFramework();
         }
 
-        private static IStorage ConfigureCosmosDb()
+        private static IStorage ConfigureCosmosDb(BotConfiguration botConfig)
         {
+            var cosmosDb = botConfig.Services.Where(s => s.Type == ServiceTypes.CosmosDB).FirstOrDefault() as CosmosDbService;
+            if (cosmosDb == null)
+            {
+                throw new InvalidOperationException("The LUIS service is not configured correctly in your '.bot' file.");
+            }
             return new CosmosDbStorage(new CosmosDbStorageOptions()
             {
-                DatabaseId = "bot",
-                CollectionId = "conversationstate",
-                AuthKey = "IazeHmfQPNDW1giK4siIQaherFz09FnV9eM02mLzg65YCFD8QXhvE8Ya0baFag8LAT6lsg8mnaCeuinAFS0YjQ==",
-                CosmosDBEndpoint = new Uri("https://bot4demostorage.documents.azure.com:443/")
+                CosmosDBEndpoint = new Uri(cosmosDb.Endpoint),
+                AuthKey = cosmosDb.Key,
+                DatabaseId = cosmosDb.Database,
+                CollectionId = cosmosDb.Collection,
             });
         }
 
         private static void ConfigureLuis(IServiceCollection services, BotConfiguration botConfig)
         {
-            var luis = botConfig.Services.Where(s => s.Type == "luis").FirstOrDefault() as LuisService;
+            var luis = botConfig.Services.Where(s => s.Type == ServiceTypes.Luis).FirstOrDefault() as LuisService;
             if (luis == null)
             {
                 throw new InvalidOperationException("The LUIS service is not configured correctly in your '.bot' file.");

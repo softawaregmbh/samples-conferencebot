@@ -72,8 +72,30 @@ namespace ConferenceBot
                     await context.SendActivityAsync("Sorry, it looks like something went wrong.");
                 };
             });
-                       
+
             // LUIS
+            ConfigureLuis(services, botConfig);
+
+            //IStorage dataStore = new MemoryStorage();
+            IStorage dataStore = ConfigureCosmosDb();
+
+            var conversationState = new ConversationState(dataStore);
+            services.AddSingleton(conversationState);
+        }
+
+        private static IStorage ConfigureCosmosDb()
+        {
+            return new CosmosDbStorage(new CosmosDbStorageOptions()
+            {
+                DatabaseId = "bot",
+                CollectionId = "conversationstate",
+                AuthKey = "IazeHmfQPNDW1giK4siIQaherFz09FnV9eM02mLzg65YCFD8QXhvE8Ya0baFag8LAT6lsg8mnaCeuinAFS0YjQ==",
+                CosmosDBEndpoint = new Uri("https://bot4demostorage.documents.azure.com:443/")
+            });
+        }
+
+        private static void ConfigureLuis(IServiceCollection services, BotConfiguration botConfig)
+        {
             var luis = botConfig.Services.Where(s => s.Type == "luis").FirstOrDefault() as LuisService;
             if (luis == null)
             {
@@ -83,18 +105,6 @@ namespace ConferenceBot
             var app = new LuisApplication(luis.AppId, luis.AuthoringKey, luis.GetEndpoint());
             var recognizer = new LuisRecognizer(app);
             services.AddSingleton<IRecognizer>(recognizer);
-
-            //IStorage dataStore = new MemoryStorage();
-            IStorage dataStore = new CosmosDbStorage(new CosmosDbStorageOptions()
-            {
-                DatabaseId = "bot",
-                CollectionId = "conversationstate",
-                AuthKey = "IazeHmfQPNDW1giK4siIQaherFz09FnV9eM02mLzg65YCFD8QXhvE8Ya0baFag8LAT6lsg8mnaCeuinAFS0YjQ==",
-                CosmosDBEndpoint = new Uri("https://bot4demostorage.documents.azure.com:443/")
-            });
-
-            var conversationState = new ConversationState(dataStore);
-            services.AddSingleton(conversationState);
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)

@@ -5,16 +5,16 @@
       "type": "endpoint",
       "name": "development",
       "endpoint": "http://localhost:3978/api/messages",
-      "appId": "",
-      "appPassword": "",
+      "appId": "127fb6f1-6b0d-4f94-b0ec-78ed09eb35d5",
+      "appPassword": "zaXIDQ53[plflcUCI434+(-",
       "id": "1"
     },
     {
       "type": "endpoint",
       "name": "production",
       "endpoint": "https://ConferenceBot.azurewebsites.net/api/messages",
-      "appId": "<YOUR APP ID>",
-      "appPassword": "<YOUR APP PASSWORD>",
+      "appId": "",
+      "appPassword": "",
       "id": "2"
     },
     {

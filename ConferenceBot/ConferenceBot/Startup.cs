@@ -73,7 +73,7 @@ namespace ConferenceBot
             var cosmosDb = botConfig.Services.Where(s => s.Type == ServiceTypes.CosmosDB).FirstOrDefault() as CosmosDbService;
             if (cosmosDb == null)
             {
-                throw new InvalidOperationException("The LUIS service is not configured correctly in your '.bot' file.");
+                throw new InvalidOperationException("The Cosmos DB service is not configured correctly in your '.bot' file.");
             }
             return new CosmosDbStorage(new CosmosDbStorageOptions()
             {

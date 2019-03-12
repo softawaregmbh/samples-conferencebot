@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <UserSecretsId>bebf5449-a3b4-4ddc-a5e9-8cd10d8ed5ec</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="ConferenceBot.bot">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.All" />
+    <PackageReference Include="Microsoft.Bot.Builder" Version="4.3.1" />
+    <PackageReference Include="Microsoft.Bot.Builder.AI.Luis" Version="4.3.1" />
+    <PackageReference Include="Microsoft.Bot.Builder.Azure" Version="4.3.1" />
+    <PackageReference Include="Microsoft.Bot.Builder.Dialogs" Version="4.3.1" />
+    <PackageReference Include="Microsoft.Bot.Builder.Integration.AspNet.Core" Version="4.3.1" />
+    <PackageReference Include="Microsoft.Bot.Configuration" Version="4.3.1" />
+    <PackageReference Include="Microsoft.Bot.Connector" Version="4.3.1" />
+    <PackageReference Include="Microsoft.Bot.Schema" Version="4.3.1" />
+  </ItemGroup>
+</Project>

@@ -32,26 +32,13 @@ namespace ConferenceBot
             Configuration = builder.Build();
         }
 
-        /// <summary>
-        /// Gets the configuration that represents a set of key/value application configuration properties.
-        /// </summary>
-        /// <value>
-        /// The <see cref="IConfiguration"/> that represents a set of key/value application configuration properties.
-        /// </value>
         public IConfiguration Configuration { get; }
 
-        /// <summary>
-        /// This method gets called by the runtime. Use this method to add services to the container.
-        /// </summary>
-        /// <param name="services">The <see cref="IServiceCollection"/> specifies the contract for a collection of service descriptors.</param>
-        /// <seealso cref="IStatePropertyAccessor{T}"/>
-        /// <seealso cref="https://docs.microsoft.com/en-us/aspnet/web-api/overview/advanced/dependency-injection"/>
-        /// <seealso cref="https://docs.microsoft.com/en-us/azure/bot-service/bot-service-manage-channels?view=azure-bot-service-4.0"/>
         public void ConfigureServices(IServiceCollection services)
         {
             var secretKey = Configuration.GetSection("botFileSecret")?.Value;
 
-            // Loads .bot configuration file and adds a singleton that your Bot can access through dependency injection.
+            // Loads .bot configuration file
             var botConfig = BotConfiguration.Load(@".\ConferenceBot.bot", secretKey);
             services.AddSingleton(sp => botConfig);
 
@@ -72,15 +59,13 @@ namespace ConferenceBot
                     await context.SendActivityAsync("Sorry, it looks like something went wrong.");
                 };
             });
+        }
 
-            // LUIS
-            ConfigureLuis(services, botConfig);
-
-            //IStorage dataStore = new MemoryStorage();
-            IStorage dataStore = ConfigureCosmosDb();
-
-            var conversationState = new ConversationState(dataStore);
-            services.AddSingleton(conversationState);
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        {
+            app.UseDefaultFiles()
+                .UseStaticFiles()
+                .UseBotFramework();
         }
 
         private static IStorage ConfigureCosmosDb()
@@ -105,13 +90,6 @@ namespace ConferenceBot
             var app = new LuisApplication(luis.AppId, luis.AuthoringKey, luis.GetEndpoint());
             var recognizer = new LuisRecognizer(app);
             services.AddSingleton<IRecognizer>(recognizer);
-        }
-
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
-        {
-            app.UseDefaultFiles()
-                .UseStaticFiles()
-                .UseBotFramework();
         }
     }
 }

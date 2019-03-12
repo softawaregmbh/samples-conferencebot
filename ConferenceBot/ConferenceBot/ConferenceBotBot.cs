@@ -1,7 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
-// Licensed under the MIT License.
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -20,88 +17,81 @@ namespace ConferenceBot
 {
     public class ConferenceBotBot : IBot
     {
-        private readonly ConversationState conversationState;
-        private readonly IRecognizer recognizer;
-        private IStatePropertyAccessor<ScheduleQuery> scheduleQueryAccessor;
-        private IStatePropertyAccessor<DialogState> dialogStateAccessor;
-        private DialogSet dialogs;
-
-        public ConferenceBotBot(ConversationState conversationState, IRecognizer recognizer)
+        public ConferenceBotBot()
         {
-            this.dialogStateAccessor = conversationState.CreateProperty<DialogState>(nameof(DialogState));
-            this.scheduleQueryAccessor = conversationState.CreateProperty<ScheduleQuery>(nameof(ScheduleQuery));
-            this.conversationState = conversationState ?? throw new System.ArgumentNullException(nameof(conversationState));
-            this.recognizer = recognizer ?? throw new ArgumentNullException(nameof(recognizer));
-
-            InitializeWaterfallDialogs();
         }
         
-        public async Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task OnTurnAsync(ITurnContext context, CancellationToken cancellationToken = default(CancellationToken))
         {
-            if (turnContext.Activity.Type == ActivityTypes.Message)
+            if (context.Activity.Type == ActivityTypes.Message)
             {
-                if (!await TryWithLuisAsync(turnContext, cancellationToken))
-                {
-                    await ExecuteWaterfall(turnContext);
-                }
-
+                await context.SendActivityAsync("Hello, world!");
             }
         }
 
-        private async Task ExecuteWaterfall(ITurnContext turnContext)
-        {
-            var dialogContext = await dialogs.CreateContextAsync(turnContext);
-            var result = await dialogContext.ContinueDialogAsync();
+        #region Adaptive Card
+        //private static async Task ShowResultingCard(ITurnContext context, ScheduleQuery scheduleQuery)
+        //{
+        //    await context.SendActivityAsync($"Wir sehen nach, was um {scheduleQuery.Time} im {scheduleQuery.Track}-Track läuft...");
 
-            if (result.Status == DialogTurnStatus.Empty)
-            {
-                await dialogContext.BeginDialogAsync("scheduleDialog");
-            }
+        //    await context.SendActivityAsync(Activity.CreateTypingActivity());
 
-            await conversationState.SaveChangesAsync(turnContext);
-        }
+        //    await Task.Delay(2000);
 
-        private async Task<bool> TryWithLuisAsync(ITurnContext turnContext, CancellationToken cancellationToken)
-        {
-            var luisResult = await recognizer.RecognizeAsync(turnContext, cancellationToken);
-            var topIntent = luisResult.GetTopScoringIntent();
+        //    // send card
+        //    var json = await File.ReadAllTextAsync(@"talkdetails.json");
+        //    var card = JsonConvert.DeserializeObject(json);
 
-            // check sentiment
-            var sentimentScore = ParseSentiment(luisResult);
-            if (sentimentScore < 0.3)
-            {
-                await turnContext.SendActivityAsync("Ups.. da ist wohl jemand schlecht gelaunt. Ein Support-Mitarbeiter meldet sich in Kürze.");
+        //    var activity = MessageFactory.Attachment(
+        //        new Attachment("application/vnd.microsoft.card.adaptive", content: card));
 
-                return true;
-            }
+        //    await context.SendActivityAsync(activity);
+        //}
+        #endregion
 
-            // check top intent
-            if (topIntent.intent == "ScheduleQuery" && topIntent.score > 0.8)
-            {
-                try
-                {
-                    var time = ParseTime(luisResult.Entities);
-                    var track = ParseTrack(luisResult.Entities);
+        #region LUIS demo
 
-                    if (!string.IsNullOrEmpty(time) && !string.IsNullOrEmpty(track))
-                    {
-                        await ShowResultingCard(turnContext, new ScheduleQuery()
-                        {
-                            Time = time,
-                            Track = track
-                        });
+        //private async Task<bool> TryWithLuisAsync(ITurnContext turnContext, CancellationToken cancellationToken)
+        //{
+        //    var luisResult = await recognizer.RecognizeAsync(turnContext, cancellationToken);
+        //    var topIntent = luisResult.GetTopScoringIntent();
 
-                        return true;
-                    }
-                }
-                catch (Exception)
-                {
-                    // LUIS failed
-                }
-            }
+        //    // check sentiment
+        //    var sentimentScore = ParseSentiment(luisResult);
+        //    if (sentimentScore < 0.3)
+        //    {
+        //        await turnContext.SendActivityAsync("Ups.. da ist wohl jemand schlecht gelaunt. Ein Support-Mitarbeiter meldet sich in Kürze.");
 
-            return false;
-        }
+        //        return true;
+        //    }
+
+        //    // check top intent
+        //    if (topIntent.intent == "ScheduleQuery" && topIntent.score > 0.8)
+        //    {
+        //        try
+        //        {
+        //            var time = ParseTime(luisResult.Entities);
+        //            var track = ParseTrack(luisResult.Entities);
+
+        //            if (!string.IsNullOrEmpty(time) && !string.IsNullOrEmpty(track))
+        //            {
+        //                await ShowResultingCard(turnContext, new ScheduleQuery()
+        //                {
+        //                    Time = time,
+        //                    Track = track
+        //                });
+
+        //                return true;
+        //            }
+        //        }
+        //        catch (Exception)
+        //        {
+        //            // LUIS failed
+        //        }
+        //    }
+
+        //    return false;
+        //}
 
         private float ParseSentiment(RecognizerResult luisResult)
         {
@@ -117,76 +107,76 @@ namespace ConferenceBot
         {
             return entities["datetime"].First["timex"].First.Value<string>();
         }
+        #endregion
+        
+        #region Waterfall demo
 
-        private void InitializeWaterfallDialogs()
-        {
-            this.dialogs = new DialogSet(this.dialogStateAccessor);
+        //private void InitializeWaterfallDialogs()
+        //{
+        //    this.dialogs = new DialogSet(this.dialogStateAccessor);
 
-            this.dialogs.Add(new DateTimePrompt("time"));
-            this.dialogs.Add(new ChoicePrompt("track")
-            {
-                Style = ListStyle.SuggestedAction
-            });
+        //    this.dialogs.Add(new DateTimePrompt("time"));
+        //    this.dialogs.Add(new ChoicePrompt("track")
+        //    {
+        //        Style = ListStyle.SuggestedAction
+        //    });
 
-            this.dialogs.Add(new WaterfallDialog("scheduleDialog")
-                        .AddStep(TimeStepAsync)
-                        .AddStep(TrackStepAsync)
-                        .AddStep(CompleteStepAsync));
-        }
-        private async Task<DialogTurnResult> TimeStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
-        {
-            return await stepContext.PromptAsync("time", new PromptOptions
-            {
-                Prompt = MessageFactory.Text("Um welche Uhrzeit?")
-            });
-        }
+        //    this.dialogs.Add(new WaterfallDialog("scheduleDialog")
+        //                .AddStep(TimeStepAsync)
+        //                .AddStep(TrackStepAsync)
+        //                .AddStep(CompleteStepAsync));
+        //}
 
-        private async Task<DialogTurnResult> TrackStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
-        {
-            var scheduleQuery = await scheduleQueryAccessor.GetAsync(stepContext.Context, () => new ScheduleQuery());
+        //private async Task ExecuteWaterfall(ITurnContext turnContext)
+        //{
+        //    var dialogContext = await dialogs.CreateContextAsync(turnContext);
+        //    var result = await dialogContext.ContinueDialogAsync();
 
-            var dateTimes = stepContext.Result as IList<DateTimeResolution>;
-            scheduleQuery.Time = dateTimes?.FirstOrDefault()?.Value;
+        //    if (result.Status == DialogTurnStatus.Empty)
+        //    {
+        //        await dialogContext.BeginDialogAsync("scheduleDialog");
+        //    }
 
-            return await stepContext.PromptAsync("track", new PromptOptions
-            {
-                Prompt = MessageFactory.Text("Auf welchem Track?"),
-                Choices = new []
-                {
-                    new Choice("Apps & Infrastructure"),
-                    new Choice("Data & AI"),
-                    new Choice("Modern Workplace"),
-                    new Choice("Hands-on Sessions")
-                }
-            });
-        }
+        //    await conversationState.SaveChangesAsync(turnContext);
+        //}
 
-        private async Task<DialogTurnResult> CompleteStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
-        {
-            var scheduleQuery = await scheduleQueryAccessor.GetAsync(stepContext.Context);
-            scheduleQuery.Track = ((FoundChoice)stepContext.Result).Value;
+        //private async Task<DialogTurnResult> TimeStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+        //{
+        //    return await stepContext.PromptAsync("time", new PromptOptions
+        //    {
+        //        Prompt = MessageFactory.Text("Um welche Uhrzeit?")
+        //    });
+        //}
 
-            await ShowResultingCard(stepContext.Context, scheduleQuery);
+        //private async Task<DialogTurnResult> TrackStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+        //{
+        //    var scheduleQuery = await scheduleQueryAccessor.GetAsync(stepContext.Context, () => new ScheduleQuery());
 
-            return await stepContext.EndDialogAsync(scheduleQuery);
-        }
+        //    var dateTimes = stepContext.Result as IList<DateTimeResolution>;
+        //    scheduleQuery.Time = dateTimes?.FirstOrDefault()?.Value;
 
-        private static async Task ShowResultingCard(ITurnContext context, ScheduleQuery scheduleQuery)
-        {
-            await context.SendActivityAsync($"Wir sehen nach, was um {scheduleQuery.Time} im {scheduleQuery.Track}-Track läuft...");
+        //    return await stepContext.PromptAsync("track", new PromptOptions
+        //    {
+        //        Prompt = MessageFactory.Text("Auf welchem Track?"),
+        //        Choices = new []
+        //        {
+        //            new Choice("Apps & Infrastructure"),
+        //            new Choice("Data & AI"),
+        //            new Choice("Modern Workplace"),
+        //            new Choice("Hands-on Sessions")
+        //        }
+        //    });
+        //}
 
-            await context.SendActivityAsync(Activity.CreateTypingActivity());
+        //private async Task<DialogTurnResult> CompleteStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+        //{
+        //    var scheduleQuery = await scheduleQueryAccessor.GetAsync(stepContext.Context);
+        //    scheduleQuery.Track = ((FoundChoice)stepContext.Result).Value;
 
-            await Task.Delay(2000);
+        //    await ShowResultingCard(stepContext.Context, scheduleQuery);
 
-            // send card
-            var json = await File.ReadAllTextAsync(@"talkdetails.json");
-            var card = JsonConvert.DeserializeObject(json);
-
-            var activity = MessageFactory.Attachment(
-                new Attachment("application/vnd.microsoft.card.adaptive", content: card));
-
-            await context.SendActivityAsync(activity);
-        }
+        //    return await stepContext.EndDialogAsync(scheduleQuery);
+        //}
+        #endregion
     }
 }
